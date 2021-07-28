@@ -28,6 +28,14 @@ let
         "${config.system.boot.loader.kernelFile}";
       initrdPath = "${config.system.build.initialRamdisk}/" +
         "${config.system.boot.loader.initrdFile}";
+
+      bootSpec = import ./boot-spec.nix {
+        inherit
+          config
+          pkgs
+          lib
+          children;
+      };
     in ''
       mkdir $out
 
@@ -93,6 +101,8 @@ let
       ''}
 
       echo -n "${toString config.system.extraDependencies}" > $out/extra-dependencies
+
+      ${bootSpec.writer}
 
       ${config.system.extraSystemBuilderCmds}
     '';
