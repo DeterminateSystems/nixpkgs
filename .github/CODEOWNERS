@@ -59,6 +59,7 @@
 /nixos/doc/manual/development/writing-modules.xml     @nbp
 /nixos/doc/manual/man-nixos-option.xml                @nbp
 /nixos/modules/installer/tools/nixos-option.sh        @nbp
+/nixos/modules/system/activation/boot-spec.nix        @grahamc @cole-h
 
 # NixOS integration test driver
 /nixos/lib/test-driver  @tfc
