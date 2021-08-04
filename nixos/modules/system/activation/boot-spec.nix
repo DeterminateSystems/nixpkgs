@@ -14,7 +14,7 @@ let
               schemaVersion = 1;
 
               # ${config.boot.loader.efi.efiSysMountPoint}
-              kernel = "${kernelBase}-${config.system.boot.loader.kernelFile}";
+              kernel = "${config.boot.kernelPackages.kernel}/${config.system.boot.loader.kernelFile}";
               kernelParams = config.boot.kernelParams;
               kernelVersion = config.boot.kernelPackages.kernel.modDirVersion;
               initrd = "${initrdBase}-${config.system.boot.loader.initrdFile}";
