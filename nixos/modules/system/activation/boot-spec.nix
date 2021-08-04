@@ -17,7 +17,7 @@ let
               kernel = "${config.boot.kernelPackages.kernel}/${config.system.boot.loader.kernelFile}";
               kernelParams = config.boot.kernelParams;
               kernelVersion = config.boot.kernelPackages.kernel.modDirVersion;
-              initrd = "${initrdBase}-${config.system.boot.loader.initrdFile}";
+              initrd = "${config.system.build.initialRamdisk}/${config.system.boot.loader.initrdFile}";
               initrdSecrets = "${config.system.build.initialRamdiskSecretAppender}/bin/append-initrd-secrets";
               systemVersion = config.system.nixos.label;
 
