@@ -3127,6 +3127,8 @@ in
 
   nix-direnv = callPackage ../tools/misc/nix-direnv { };
 
+  nix-netboot-serve = callPackage ../tools/networking/nix-netboot-serve { };
+
   nix-output-monitor = haskell.lib.justStaticExecutables (haskellPackages.nix-output-monitor);
 
   nix-template = callPackage ../tools/package-management/nix-template {
