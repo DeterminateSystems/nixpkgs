@@ -1,0 +1,60 @@
+diff --git a/multipathd/main.c b/multipathd/main.c
+index 34a57689..b314b9bb 100644
+--- a/multipathd/main.c
++++ b/multipathd/main.c
+@@ -127,6 +127,7 @@ int poll_dmevents = 0;
+ #else
+ int poll_dmevents = 1;
+ #endif
++int disable_systemd_for_stage1_boot;
+ /* Don't access this variable without holding config_lock */
+ enum daemon_status running_state = DAEMON_INIT;
+ pid_t daemon_pid;
+@@ -208,8 +209,9 @@ static void do_sd_notify(enum daemon_status old_state,
+ 	 * No need to tell systemd each time.
+ 	 * These notifications cause a lot of overhead on dbus.
+ 	 */
+-	if ((new_state == DAEMON_IDLE || new_state == DAEMON_RUNNING) &&
+-	    (old_state == DAEMON_IDLE || old_state == DAEMON_RUNNING))
++	if (((new_state == DAEMON_IDLE || new_state == DAEMON_RUNNING) &&
++	     (old_state == DAEMON_IDLE || old_state == DAEMON_RUNNING)) ||
++	    disable_systemd_for_stage1_boot)
+ 		return;
+ 	sd_notify(0, sd_notify_status(new_state));
+ }
+@@ -3155,7 +3157,7 @@ main (int argc, char *argv[])
+ 	udev = udev_new();
+ 	libmp_udev_set_sync_support(0);
+ 
+-	while ((arg = getopt(argc, argv, ":dsv:k::Bniw")) != EOF ) {
++	while ((arg = getopt(argc, argv, ":dsv:k::Bniw1")) != EOF ) {
+ 		switch(arg) {
+ 		case 'd':
+ 			foreground = 1;
+@@ -3193,6 +3195,9 @@ main (int argc, char *argv[])
+ 		case 'w':
+ 			poll_dmevents = 0;
+ 			break;
++		case '1':
++			disable_systemd_for_stage1_boot = 1;
++			break;
+ 		default:
+ 			fprintf(stderr, "Invalid argument '-%c'\n",
+ 				optopt);
+diff --git a/multipathd/multipathd.8 b/multipathd/multipathd.8
+index 048a838d..8de48668 100644
+--- a/multipathd/multipathd.8
++++ b/multipathd/multipathd.8
+@@ -84,6 +84,12 @@ Since kernel 4.14 a new device-mapper event polling interface is used for updati
+ multipath devices on dmevents. Use this flag to force it to use the old event
+ waiting method, based on creating a seperate thread for each device.
+ .
++.TP
++.B \-1
++Disable systemd \fIsd_notify()\fR calls. Used in NixOS stage1 boot where systemd
++is not available. Roughly equivalent to compiling \fBmultipath-tools\fR with
++\fIUSE_SYSTEMD\fR disabled.
++.
+ .
+ .
+ .\" ----------------------------------------------------------------------------

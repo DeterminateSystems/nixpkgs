@@ -13,15 +13,19 @@ stdenv.mkDerivation rec {
   patches = [
     # fix build with json-c 0.14 https://www.redhat.com/archives/dm-devel/2020-May/msg00261.html
     ./json-c-0.14.patch
+    # add flag to disable systemd in stage1 boot
+    ./stage1.patch
   ];
 
   postPatch = ''
     substituteInPlace libmultipath/Makefile \
       --replace /usr/include/libdevmapper.h ${lib.getDev lvm2}/include/libdevmapper.h
 
+    # systemd-udev-settle.service is deprecated.
     substituteInPlace multipathd/multipathd.service \
       --replace /sbin/modprobe ${lib.getBin kmod}/sbin/modprobe \
-      --replace /sbin/multipathd "$out/bin/multipathd"
+      --replace /sbin/multipathd "$out/bin/multipathd" \
+      --replace " systemd-udev-settle.service" ""
 
     sed -i -re '
       s,^( *#define +DEFAULT_MULTIPATHDIR\>).*,\1 "'"$out/lib/multipath"'",

@@ -531,6 +531,7 @@ in {
         ${optionalString (!isNull defaults) ''
           defaults {
           ${indentLines 2 defaults}
+            multipath_dir ${cfg.package}/lib/multipath
           }
         ''}
         ${optionalString (!isNull blacklist) ''
@@ -556,6 +557,19 @@ in {
     systemd.packages = [ cfg.package ];
 
     environment.systemPackages = [ cfg.package ];
-    boot.kernelModules = [ "dm-multipath" ];
+    boot.kernelModules = [ "dm-multipath" "dm-service-time" ];
+
+    # We do not have systemd in stage-1 boot so must invoke `multipathd`
+    # with the `-1` argument which disables systemd calls. Invoke `multipath`
+    # to display the multipath mappings in the output of `journalctl -b`.
+    boot.initrd.kernelModules = [ "dm-multipath" "dm-service-time" ];
+    boot.initrd.secrets = {
+      "/etc/multipath/wwids" = "/etc/multipath/wwids";
+    };
+    boot.initrd.postDeviceCommands = ''
+      modprobe -a dm-multipath dm-service-time
+      multipathd -1 -s
+      (set -x && sleep 1 && multipath -ll)
+    '';
   };
 }
