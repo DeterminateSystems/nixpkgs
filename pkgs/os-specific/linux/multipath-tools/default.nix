@@ -13,8 +13,6 @@ stdenv.mkDerivation rec {
   patches = [
     # fix build with json-c 0.14 https://www.redhat.com/archives/dm-devel/2020-May/msg00261.html
     ./json-c-0.14.patch
-    # add flag to disable systemd in stage1 boot
-    ./stage1.patch
   ];
 
   postPatch = ''

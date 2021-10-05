@@ -565,7 +565,7 @@ in {
     boot.initrd.kernelModules = [ "dm-multipath" "dm-service-time" ];
     boot.initrd.postDeviceCommands = ''
       modprobe -a dm-multipath dm-service-time
-      multipathd -1 -s
+      multipathd -s
       (set -x && sleep 1 && multipath -ll)
     '';
   };
