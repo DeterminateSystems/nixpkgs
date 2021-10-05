@@ -563,9 +563,6 @@ in {
     # with the `-1` argument which disables systemd calls. Invoke `multipath`
     # to display the multipath mappings in the output of `journalctl -b`.
     boot.initrd.kernelModules = [ "dm-multipath" "dm-service-time" ];
-    boot.initrd.secrets = {
-      "/etc/multipath/wwids" = "/etc/multipath/wwids";
-    };
     boot.initrd.postDeviceCommands = ''
       modprobe -a dm-multipath dm-service-time
       multipathd -1 -s
