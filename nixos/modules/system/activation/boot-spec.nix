@@ -4,16 +4,11 @@ let
     v1 = rec {
       filename = "boot.v1.json";
       json =
-        let
-          kernelBase = builtins.replaceStrings [ "/nix/store/" ] [ "" ] "${config.boot.kernelPackages.kernel}";
-          initrdBase = builtins.replaceStrings [ "/nix/store/" ] [ "" ] "${config.system.build.initialRamdisk}";
-        in
         pkgs.writeText filename
           (builtins.toJSON
             {
               schemaVersion = 1;
 
-              # ${config.boot.loader.efi.efiSysMountPoint}
               kernel = "${config.boot.kernelPackages.kernel}/${config.system.boot.loader.kernelFile}";
               kernelParams = config.boot.kernelParams;
               kernelVersion = config.boot.kernelPackages.kernel.modDirVersion;
@@ -22,7 +17,10 @@ let
               systemVersion = config.system.nixos.label;
 
               specialisation = lib.mapAttrs
-                (childName: childToplevel: "${childToplevel}/${filename}")
+                (childName: childToplevel: {
+                  bootspec = "${childToplevel}/${filename}";
+                  toplevel = childToplevel;
+                })
                 children;
             });
 
@@ -44,6 +42,6 @@ in
   # This will be run as a part of the `systemBuilder` in ./top-level.nix. This
   # means `$out` points to the output of `config.system.build.toplevel` and can
   # be used for a variety of things (though, for now, it's only used to report
-  # the path of the `toplevel` itself and the `init` symlink).
+  # the path of the `toplevel` itself and the `init` executable).
   writer = schemas.v1.generator;
 }
