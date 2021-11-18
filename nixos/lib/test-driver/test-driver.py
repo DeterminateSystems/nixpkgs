@@ -315,11 +315,11 @@ class Machine:
         return answer
 
     def send_monitor_command(self, command: str) -> str:
-        message = ("{}\n".format(command)).encode()
-        self.log("sending monitor command: {}".format(command))
-        assert self.monitor is not None
-        self.monitor.send(message)
-        return self.wait_for_monitor_prompt()
+        with self.nested("sending monitor command: {}".format(command)):
+            message = ("{}\n".format(command)).encode()
+            assert self.monitor is not None
+            self.monitor.send(message)
+            return self.wait_for_monitor_prompt()
 
     def wait_for_unit(self, unit: str, user: Optional[str] = None) -> None:
         """Wait for a systemd unit to get into "active" state.
@@ -346,7 +346,12 @@ class Machine:
 
             return state == "active"
 
-        retry(check_active)
+        with self.nested(
+            "waiting for unit {}{}".format(
+                unit, f" with user {user}" if user is not None else ""
+            )
+        ):
+            retry(check_active)
 
     def get_unit_info(self, unit: str, user: Optional[str] = None) -> Dict[str, str]:
         status, lines = self.systemctl('--no-pager show "{}"'.format(unit), user)
@@ -534,7 +539,8 @@ class Machine:
             status, _ = self.execute("nc -z localhost {}".format(port))
             return status != 0
 
-        retry(port_is_closed)
+        with self.nested("waiting for TCP port {} to be closed"):
+            retry(port_is_closed)
 
     def start_job(self, jobname: str, user: Optional[str] = None) -> Tuple[int, str]:
         return self.systemctl("start {}".format(jobname), user)
@@ -681,20 +687,20 @@ class Machine:
             retry(screen_matches)
 
     def wait_for_console_text(self, regex: str) -> None:
-        self.log("waiting for {} to appear on console".format(regex))
-        # Buffer the console output, this is needed
-        # to match multiline regexes.
-        console = io.StringIO()
-        while True:
-            try:
-                console.write(self.last_lines.get())
-            except queue.Empty:
-                self.sleep(1)
-                continue
-            console.seek(0)
-            matches = re.search(regex, console.read())
-            if matches is not None:
-                return
+        with self.nested("waiting for {} to appear on console".format(regex)):
+            # Buffer the console output, this is needed
+            # to match multiline regexes.
+            console = io.StringIO()
+            while True:
+                try:
+                    console.write(self.last_lines.get())
+                except queue.Empty:
+                    self.sleep(1)
+                    continue
+                console.seek(0)
+                matches = re.search(regex, console.read())
+                if matches is not None:
+                    return
 
     def send_key(self, key: str) -> None:
         key = CHAR_TO_KEY.get(key, key)
@@ -839,7 +845,7 @@ class Machine:
                 )
             return any(pattern.search(name) for name in names)
 
-        with self.nested("Waiting for a window to appear"):
+        with self.nested("waiting for a window to appear"):
             retry(window_is_visible)
 
     def sleep(self, secs: int) -> None:
