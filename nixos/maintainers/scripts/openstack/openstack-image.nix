@@ -5,10 +5,10 @@
 with lib;
 
 {
-  imports =
-    [ ../../../modules/installer/cd-dvd/channel.nix
-      ../../../modules/virtualisation/openstack-config.nix
-    ];
+  imports = [
+    ../../../modules/installer/cd-dvd/channel.nix
+    ../../../modules/virtualisation/openstack-config.nix
+  ];
 
   system.build.openstackImage = import ../../../lib/make-disk-image.nix {
     inherit lib config;
