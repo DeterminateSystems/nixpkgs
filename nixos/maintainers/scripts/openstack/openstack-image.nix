@@ -2,7 +2,7 @@
 
 { config, lib, pkgs, ... }:
 let
-  copyChannel = true;
+  copyChannel = false;
 in
 {
   imports = [
