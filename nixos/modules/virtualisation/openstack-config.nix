@@ -1,7 +1,5 @@
 { pkgs, lib, ... }:
 
-with lib;
-
 let
   metadataFetcher = import ./openstack-metadata-fetcher.nix {
     targetRoot = "/";
@@ -33,17 +31,17 @@ in
     services.openssh = {
       enable = true;
       permitRootLogin = "prohibit-password";
-      passwordAuthentication = mkDefault false;
+      passwordAuthentication = lib.mkDefault false;
     };
 
     # Force getting the hostname from Openstack metadata.
-    networking.hostName = mkDefault "";
+    networking.hostName = lib.mkDefault "";
 
     systemd.services.openstack-init = {
       path = [ pkgs.wget ];
       description = "Fetch Metadata on startup";
       wantedBy = [ "multi-user.target" ];
-      before = [ "apply-ec2-data.service" "amazon-init.service"];
+      before = [ "apply-ec2-data.service" "amazon-init.service" ];
       wants = [ "network-online.target" ];
       after = [ "network-online.target" ];
       script = metadataFetcher;
