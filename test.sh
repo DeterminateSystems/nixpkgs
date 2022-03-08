@@ -2,11 +2,10 @@
 
 set -eux
 
-nix-build ./nixos -A config.system.build.openstackImage --arg configuration "{ imports = [ ./nixos/maintainers/scripts/openstack/openstack-image-zfs.nix ]; }"
+nix-build ./nixos -A config.system.build.openstackImage --arg configuration "{ imports = [ ./nixos/maintainers/scripts/openstack/openstack-image-zfs.nix ]; }" 
+#--show-trace
 
-boot=$(find ./result/ -name '*.boot.*');
 root=$(find ./result/ -name '*.root.*');
-
 
 echo '`Ctrl-a h` to get help on the monitor';
 echo '`Ctrl-a x` to exit';
@@ -27,7 +26,6 @@ run_efi \
     -nographic \
     -cpu max \
     -m 16G \
-    -drive file=$boot,snapshot=on,index=0,media=disk \
     -drive file=$root,snapshot=on,index=1,media=disk \
     -boot c \
     -net user \
