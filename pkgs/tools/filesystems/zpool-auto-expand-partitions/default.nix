@@ -34,10 +34,7 @@ rustPlatform.buildRustPackage rec {
 
   buildInputs = [
     zfs.dev
-    # util-linux # did not help: wrapper.h:1:10: fatal error: 'blkid/blkid.h' file not found
+    util-linux.dev
   ];
-
-  # Helped with: set the `LIBCLANG_PATH` environment variable to a path where one of these files can be found
-  LIBCLANG_PATH = "${llvmPackages.libclang.lib}/lib";
 }
 
