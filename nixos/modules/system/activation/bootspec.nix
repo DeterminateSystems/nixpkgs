@@ -61,6 +61,5 @@ rec {
 
   filename = schemas.v1.filename;
 
-  # validator = "${pkgs.bootspec}/bin/validate $out/bootspec/${filename}";
-  validator = "echo -n";
+  validator = "${pkgs.bootspec}/bin/validate $out/bootspec/${filename}";
 }
