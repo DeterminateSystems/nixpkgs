@@ -104,6 +104,7 @@ let
       echo -n "${toString config.system.extraDependencies}" > $out/extra-dependencies
 
       ${bootSpec.writer}
+      ${bootSpec.validator}
 
       ${config.system.extraSystemBuilderCmds}
     '';
