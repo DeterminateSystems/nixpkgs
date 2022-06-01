@@ -7,7 +7,6 @@
 let
   schemas = {
     v1 = rec {
-      filename = "boot.v1.json";
       json =
         pkgs.writeText filename
           (builtins.toJSON
@@ -22,12 +21,10 @@ let
       generator =
         let
           specialisationLoader = (lib.mapAttrsToList
-            (childName: childToplevel: lib.escapeShellArgs [ "--slurpfile" childName "${childToplevel}/bootspec/${filename}" ])
+            (childName: childToplevel: lib.escapeShellArgs [ "--slurpfile" childName "${childToplevel}/${filename}" ])
             children);
         in
         ''
-          mkdir -p $out/bootspec
-
           ${pkgs.jq}/bin/jq '
             .toplevel = $toplevel |
             .init = $init
@@ -44,7 +41,7 @@ let
               ' \
               --sort-keys \
               ${lib.concatStringsSep " " specialisationLoader} \
-              > $out/bootspec/${filename}
+              > $out/boot.json
         '';
     };
   };
@@ -56,7 +53,5 @@ rec {
   # the path of the `toplevel` itself and the `init` executable).
   writer = schemas.v1.generator;
 
-  filename = schemas.v1.filename;
-
-  validator = "${pkgs.bootspec}/bin/validate $out/bootspec/${filename}";
+  validator = "${pkgs.bootspec}/bin/validate $out/boot.json";
 }
