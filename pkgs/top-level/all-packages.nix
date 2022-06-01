@@ -1914,6 +1914,8 @@ with pkgs;
 
   blanket = callPackage ../applications/audio/blanket { };
 
+  bootspec = callPackage ../tools/nix/bootspec { };
+
   brakeman = callPackage ../development/tools/analysis/brakeman { };
 
   brewtarget = libsForQt514.callPackage ../applications/misc/brewtarget { } ;
