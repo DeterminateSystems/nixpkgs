@@ -8,7 +8,7 @@ let
   schemas = {
     v1 = rec {
       json =
-        pkgs.writeText filename
+        pkgs.writeText "boot.json"
           (builtins.toJSON
             {
               kernel = "${config.boot.kernelPackages.kernel}/${config.system.boot.loader.kernelFile}";
