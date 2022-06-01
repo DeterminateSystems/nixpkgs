@@ -38,15 +38,12 @@ let
             < ${json} \
             | ${pkgs.jq}/bin/jq '
               .specialisation = (
-                $ARGS.named | map_values(. | first) |
-                map_values(. | del(.schemaVersion)) |
-                to_entries | map({ (.key): (.value | add) }) | add
+                $ARGS.named | map_values(. | first | .v1)
               ) |
-              .specialisation //= {}
+              { v1: . }
               ' \
               --sort-keys \
               ${lib.concatStringsSep " " specialisationLoader} \
-              | ${pkgs.jq}/bin/jq '{ v1: . }' \
               > $out/bootspec/${filename}
         '';
     };
