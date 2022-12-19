@@ -265,65 +265,24 @@ let
         unlink $out/lib/modules/${modDirVersion}/build
         unlink $out/lib/modules/${modDirVersion}/source
 
-        mkdir -p $dev/lib/modules/${modDirVersion}/{build,source}
+        # Some out-of-tree modules expect the parent of the build dir to be the source, so we put it in there directly and provide a symlink in the parent
+        mkdir -p $dev/lib/modules/${modDirVersion}/source/build
+        ln -snf source/build $dev/lib/modules/${modDirVersion}/build
 
         # To save space, exclude a bunch of unneeded stuff when copying.
         (cd .. && rsync --archive --prune-empty-dirs \
-            --exclude='/build/' \
+            --exclude=/build/ \
             * $dev/lib/modules/${modDirVersion}/source/)
 
-        cd $dev/lib/modules/${modDirVersion}/source
-
-        cp $buildRoot/{.config,Module.symvers} $dev/lib/modules/${modDirVersion}/build
-        make modules_prepare $makeFlags "''${makeFlagsArray[@]}" O=$dev/lib/modules/${modDirVersion}/build
-
-        # For reproducibility, removes accidental leftovers from a `cc1` call
-        # from a `try-run` call from the Makefile
-        rm -f $dev/lib/modules/${modDirVersion}/build/.[0-9]*.d
-
-        # Keep some extra files on some arches (powerpc, aarch64)
-        for f in arch/powerpc/lib/crtsavres.o arch/arm64/kernel/ftrace-mod.o; do
-          if [ -f "$buildRoot/$f" ]; then
-            cp $buildRoot/$f $dev/lib/modules/${modDirVersion}/build/$f
-          fi
-        done
-
-        # !!! No documentation on how much of the source tree must be kept
-        # If/when kernel builds fail due to missing files, you can add
-        # them here. Note that we may see packages requiring headers
-        # from drivers/ in the future; it adds 50M to keep all of its
-        # headers on 3.10 though.
-
-        chmod u+w -R ..
-        arch=$(cd $dev/lib/modules/${modDirVersion}/build/arch; ls)
-
-        # Remove unused arches
-        for d in $(cd arch/; ls); do
-          if [ "$d" = "$arch" ]; then continue; fi
-          if [ "$arch" = arm64 ] && [ "$d" = arm ]; then continue; fi
-          rm -rf arch/$d
-        done
-
-        # Remove all driver-specific code (50M of which is headers)
-        rm -fR drivers
-
-        # Keep all headers
-        find .  -type f -name '*.h' -print0 | xargs -0 -r chmod u-w
-
-        # Keep linker scripts (they are required for out-of-tree modules on aarch64)
-        find .  -type f -name '*.lds' -print0 | xargs -0 -r chmod u-w
-
-        # Keep root and arch-specific Makefiles
-        chmod u-w Makefile arch/"$arch"/Makefile*
-
-        # Keep whole scripts dir
-        chmod u-w -R scripts
-
-        # Delete everything not kept
-        find . -type f -perm -u=w -print0 | xargs -0 -r rm
-
-        # Delete empty directories
-        find -empty -type d -delete
+        rsync --archive \
+          --exclude 'drivers' \
+          --include '.config' \
+          --exclude '.*' \
+          --include 'crtsavres.o' \
+          --include 'ftrace-mod.o' \
+          --exclude '*.o' \
+          --exclude '.[0-9]*.d' \
+          $buildRoot/ $dev/lib/modules/${modDirVersion}/source/build/
 
         # Remove reference to kmod
         sed -i Makefile -e 's|= ${buildPackages.kmod}/bin/depmod|= depmod|'
