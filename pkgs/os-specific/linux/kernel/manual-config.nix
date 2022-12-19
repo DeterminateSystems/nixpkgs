@@ -96,6 +96,14 @@ let
 
       inherit src;
 
+      postUnpack = lib.optionalString isModular ''
+        mkdir -p $dev/lib/modules/${modDirVersion}
+        dev_source_dir=$dev/lib/modules/${modDirVersion}/source
+        rm -f $dev_source_dir
+        mv $sourceRoot $dev_source_dir
+        export sourceRoot="$dev_source_dir"
+      '';
+
       patches =
         map (p: p.patch) kernelPatches
         # Required for deterministic builds along with some postPatch magic.
@@ -145,8 +153,13 @@ let
       configurePhase = ''
         runHook preConfigure
 
+        ${if isModular then ''
+        export buildRoot="$dev/lib/modules/${modDirVersion}/build"
+        mkdir -p $buildRoot
+        '' else ''
         mkdir build
         export buildRoot="$(pwd)/build"
+        ''}
 
         echo "manual-config configurePhase buildRoot=$buildRoot pwd=$PWD"
 
@@ -255,37 +268,26 @@ let
       postInstall = (optionalString installsFirmware ''
         mkdir -p $out/lib/firmware
       '') + (if isModular then ''
-        mkdir -p $dev
         cp vmlinux $dev/
         if [ -z "''${dontStrip-}" ]; then
           installFlagsArray+=("INSTALL_MOD_STRIP=1")
         fi
         make modules_install $makeFlags "''${makeFlagsArray[@]}" \
           $installFlags "''${installFlagsArray[@]}"
-        unlink $out/lib/modules/${modDirVersion}/build
-        unlink $out/lib/modules/${modDirVersion}/source
 
-        # Some out-of-tree modules expect the parent of the build dir to be the source, so we put it in there directly and provide a symlink in the parent
-        mkdir -p $dev/lib/modules/${modDirVersion}/source/build
-        ln -snf source/build $dev/lib/modules/${modDirVersion}/build
+        (cd $sourceRoot && rsync --archive --prune-empty-dirs \
+            ./ $dev/lib/modules/${modDirVersion}/source/)
 
-        # To save space, exclude a bunch of unneeded stuff when copying.
-        (cd .. && rsync --archive --prune-empty-dirs \
-            --exclude=/build/ \
-            * $dev/lib/modules/${modDirVersion}/source/)
-
-        rsync --archive \
-          --exclude 'drivers' \
-          --include '.config' \
-          --exclude '.*' \
-          --include 'crtsavres.o' \
-          --include 'ftrace-mod.o' \
-          --exclude '*.o' \
-          --exclude '.[0-9]*.d' \
-          $buildRoot/ $dev/lib/modules/${modDirVersion}/source/build/
+        echo "Removing unneeded parts of the build tree"
+        find $buildRoot -depth \
+          \( -name '*.o' -and ! -name crtsavres.o -and ! -name ftrace-mod.o \) \
+          -or \( -name '.*' -and ! -name .config \) \
+          -or \( -path '*/drivers/*' \) \
+          -or \( -name '*.d' \) \
+          -print -delete
 
         # Remove reference to kmod
-        sed -i Makefile -e 's|= ${buildPackages.kmod}/bin/depmod|= depmod|'
+        sed -i $sourceRoot/Makefile -e 's|= ${buildPackages.kmod}/bin/depmod|= depmod|'
       '' else optionalString installsFirmware ''
         make firmware_install $makeFlags "''${makeFlagsArray[@]}" \
           $installFlags "''${installFlagsArray[@]}"
