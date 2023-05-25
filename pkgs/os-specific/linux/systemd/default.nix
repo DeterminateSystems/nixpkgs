@@ -360,7 +360,7 @@ stdenv.mkDerivation (finalAttrs: {
     patchShebangs tools test src/!(rpm|kernel-install|ukify) src/kernel-install/test-kernel-install.sh
   '';
 
-  outputs = [ "out" "man" "dev" ];
+  outputs = [ "out" "man" "dev" "udev" ];
 
   nativeBuildInputs =
     [
@@ -700,6 +700,10 @@ stdenv.mkDerivation (finalAttrs: {
 
     # "kernel-install" shouldn't be used on NixOS.
     find $out -name "*kernel-install*" -exec rm {} \;
+
+    moveToOutput "lib/libudev.*" $udev
+    moveToOutput include/libudev.h $udev
+    moveToOutput lib/pkgconfig/libudev.pc $udev
   '' + lib.optionalString (!withDocumentation) ''
     rm -rf $out/share/doc
   '' + lib.optionalString withKmod ''
